@@ -31,8 +31,8 @@ services:
 
   backend:
     build:
-      context: ../../Downloads/library-backend/backend
-      dockerfile: ../../Downloads/library-backend/backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: library-backend
     ports:
       - "8080:8080"
@@ -43,21 +43,17 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: very-long-secret-key-for-library-management-system-minimum-256-bits
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    deploy:
+      resources:
+        limits:
+          memory: 768m
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: library-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
 
 volumes:
   postgres_data:

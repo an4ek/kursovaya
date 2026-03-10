@@ -54,9 +54,13 @@ class AuthService(
     }
 
     fun login(request: LoginRequest): AuthResponse {
-        authenticationManager.authenticate(
-            UsernamePasswordAuthenticationToken(request.login, request.password)
-        )
+        try {
+            authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken(request.login, request.password)
+            )
+        } catch (ex: Exception) {
+            throw BusinessRuleException("Invalid login or password")
+        }
 
         val account = userAccountRepository.findByLogin(request.login)
             ?: throw BusinessRuleException("User not found")
