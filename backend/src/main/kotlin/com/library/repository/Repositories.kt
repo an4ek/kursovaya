@@ -29,25 +29,29 @@ interface ReaderRepository : JpaRepository<Reader, UUID> {
 
 @Repository
 interface BookTitleRepository : JpaRepository<BookTitle, UUID> {
-    @Query("""
-        SELECT bt FROM BookTitle bt 
-        WHERE (:title IS NULL OR LOWER(bt.title) LIKE LOWER(CONCAT('%', :title, '%')))
-        AND (:author IS NULL OR LOWER(bt.author) LIKE LOWER(CONCAT('%', :author, '%')))
-        AND (:genre IS NULL OR bt.genre = :genre)
-    """)
+    @Query(
+        value = """
+            SELECT * FROM book_title bt 
+            WHERE (:title IS NULL OR bt.title ILIKE CONCAT('%', CAST(:title AS text), '%'))
+            AND (:author IS NULL OR bt.author ILIKE CONCAT('%', CAST(:author AS text), '%'))
+        """,
+        nativeQuery = true
+    )
     fun findWithFilters(
         @Param("title") title: String?,
-        @Param("author") author: String?,
-        @Param("genre") genre: String?
+        @Param("author") author: String?
     ): List<BookTitle>
 
-    @Query("""
-        SELECT bt FROM BookTitle bt 
-        WHERE EXISTS (
-            SELECT bc FROM BookCopy bc 
-            WHERE bc.bookTitle = bt AND bc.status = 'AVAILABLE'
-        )
-    """)
+    @Query(
+        value = """
+            SELECT * FROM book_title bt 
+            WHERE EXISTS (
+                SELECT 1 FROM book_copy bc 
+                WHERE bc.book_title_id = bt.id AND bc.status = 'AVAILABLE'
+            )
+        """,
+        nativeQuery = true
+    )
     fun findAllAvailable(): List<BookTitle>
 }
 
@@ -63,7 +67,14 @@ interface BookCopyRepository : JpaRepository<BookCopy, UUID> {
     """)
     fun findFirstAvailableByBookTitleId(@Param("titleId") titleId: UUID): List<BookCopy>
 
-    fun countByBookTitleIdAndStatus(bookTitleId: UUID, status: BookCopyStatus): Long
+    @Query(
+        value = "SELECT COUNT(*) FROM book_copy WHERE book_title_id = :titleId AND status = :status",
+        nativeQuery = true
+    )
+    fun countAvailableCopies(
+        @Param("titleId") bookTitleId: UUID,
+        @Param("status") status: String
+    ): Long
 }
 
 @Repository

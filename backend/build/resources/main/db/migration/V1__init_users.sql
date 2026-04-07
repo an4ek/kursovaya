@@ -26,7 +26,7 @@ CREATE INDEX idx_reader_user_account ON reader(user_account_id);
 INSERT INTO user_account (id, login, password_hash, role, status) VALUES (
     '00000000-0000-0000-0000-000000000001',
     'admin',
-    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+    '$2a$10$LYIKaCTIfqromjzGsvsEReDl6Wlb2ZUbkwcXqgA8KF9bboWUVBdIK', -- admin123 bcrypt
     'LIBRARIAN',
     'ACTIVE'
 );

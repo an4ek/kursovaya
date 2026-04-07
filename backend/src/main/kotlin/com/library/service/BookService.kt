@@ -29,7 +29,6 @@ class BookService(
     private val bookCopyRepository: BookCopyRepository
 ) {
 
-    @Cacheable(cacheNames = [RedisConfig.BOOKS_CACHE], key = "'all:' + #title + ':' + #author + ':' + #genre + ':' + #availableOnly")
     @Transactional(readOnly = true)
     fun findAll(
         title: String? = null,
@@ -40,23 +39,22 @@ class BookService(
         val books = if (availableOnly) {
             bookTitleRepository.findAllAvailable()
         } else {
-            bookTitleRepository.findWithFilters(title, author, genre)
+            bookTitleRepository.findWithFilters(title, author)
         }
 
         return books.map { book ->
             val availableCount = bookCopyRepository
-                .countByBookTitleIdAndStatus(book.id, BookCopyStatus.AVAILABLE)
+                .countAvailableCopies(book.id, BookCopyStatus.AVAILABLE.name)
             BookTitleResponse.from(book, availableCount)
         }
     }
 
-    @Cacheable(cacheNames = [RedisConfig.BOOK_DETAIL_CACHE], key = "#id")
     @Transactional(readOnly = true)
     fun findById(id: UUID): BookTitleResponse {
         val book = bookTitleRepository.findById(id)
             .orElseThrow { EntityNotFoundException("BookTitle", id) }
         val availableCount = bookCopyRepository
-            .countByBookTitleIdAndStatus(book.id, BookCopyStatus.AVAILABLE)
+            .countAvailableCopies(book.id, BookCopyStatus.AVAILABLE.name)
         return BookTitleResponse.from(book, availableCount)
     }
 
@@ -102,7 +100,7 @@ class BookService(
 
         val saved = bookTitleRepository.save(book)
         val availableCount = bookCopyRepository
-            .countByBookTitleIdAndStatus(book.id, BookCopyStatus.AVAILABLE)
+            .countAvailableCopies(book.id, BookCopyStatus.AVAILABLE.name)
         return BookTitleResponse.from(saved, availableCount)
     }
 
