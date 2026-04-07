@@ -40,6 +40,12 @@
       </div>
     </div>
 
+    <div class="filters">
+      <button :class="['filter-btn', filter === 'all' && 'active']" @click="setFilter('all')">Все</button>
+      <button :class="['filter-btn', filter === 'active' && 'active']" @click="setFilter('active')">Активные</button>
+      <button :class="['filter-btn overdue-btn', filter === 'overdue' && 'active']" @click="setFilter('overdue')">Просроченные</button>
+    </div>
+
     <div v-if="loading" class="loading">Загрузка...</div>
     <div v-else-if="loans.length === 0" class="empty">Выдач пока нет</div>
     <div v-else class="loans-list">
@@ -63,6 +69,7 @@ import { ref, onMounted } from 'vue'
 import api from '../api/axios'
 
 const loans = ref<any[]>([])
+const filter = ref('all')
 const readers = ref<any[]>([])
 const books = ref<any[]>([])
 const copies = ref<any[]>([])
@@ -133,6 +140,31 @@ async function returnLoan(id: string) {
   } catch (e) { console.error(e) }
 }
 
+async function setFilter(f: string) {
+  filter.value = f
+  loading.value = true
+  try {
+    if (f === 'overdue') {
+      const res = await api.get('/loans/overdue')
+      loans.value = parseList(res.data).map((l: any) => ({
+        ...l,
+        bookTitle: l.bookCopy?.bookTitle?.title ?? '',
+        readerName: l.reader?.fullName ?? ''
+      }))
+    } else if (f === 'active') {
+      const res = await api.get('/loans?status=ACTIVE')
+      loans.value = parseList(res.data).map((l: any) => ({
+        ...l,
+        bookTitle: l.bookCopy?.bookTitle?.title ?? '',
+        readerName: l.reader?.fullName ?? ''
+      }))
+    } else {
+      await loadLoans()
+    }
+  } catch (e) { console.error(e) }
+  finally { loading.value = false }
+}
+
 onMounted(loadLoans)
 </script>
 
@@ -161,4 +193,8 @@ onMounted(loadLoans)
 .btn-primary:hover { background: #3a57d6; }
 .btn-secondary { background: #f0f0f0; color: #333; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
 .loading, .empty { text-align: center; color: #999; margin-top: 3rem; }
+.filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 13px; }
+.filter-btn.active { background: #4f6ef7; color: white; border-color: #4f6ef7; }
+.overdue-btn.active { background: #e53e3e; border-color: #e53e3e; }
 </style>
