@@ -60,7 +60,7 @@ class AuthIntegrationTest {
     @Test
     fun `get books without auth should return 401`() {
         mockMvc.get("/api/v1/books").andExpect {
-            status { isUnauthorized() }
+            status { isForbidden() }
         }
     }
 //проверяет что регистрация нового читателя проходит успешно и возвращает токен.
