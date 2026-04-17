@@ -1,0 +1,23 @@
+//отвечает за требование ТЗ «@Async». Говорит Spring: для фоновых задач создай отдельный пул потоков (2-5 штук) с именами library-async-*. Благодаря этому уведомления отправляются в фоне и не замедляют ответ пользователю.
+package com.library.config
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import java.util.concurrent.Executor
+
+@Configuration
+@EnableAsync
+@EnableScheduling
+class AsyncConfig {
+
+    @Bean(name = ["taskExecutor"])
+    fun taskExecutor(): Executor = ThreadPoolTaskExecutor().apply {
+        corePoolSize = 2
+        maxPoolSize = 5
+        queueCapacity = 100
+        setThreadNamePrefix("library-async-")
+        initialize()
+    }
+}
