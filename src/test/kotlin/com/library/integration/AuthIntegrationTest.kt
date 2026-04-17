@@ -53,7 +53,7 @@ class AuthIntegrationTest {
             contentType = MediaType.APPLICATION_JSON
             content = """{"login":"admin","password":"wrongpassword"}"""
         }.andExpect {
-            status { isUnauthorized() }
+            status { isUnprocessableEntity() }
         }
     }
 //проверяет что без токена нельзя получить список книг.
