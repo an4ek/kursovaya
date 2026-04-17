@@ -39,7 +39,7 @@ docker-compose up -d
 
 | Сущность | Описание | Файл |
 |----------|----------|------|
-| BookTitle | Название, автор, ISBN | model/BookTitle.kt |
+| BookTitle | Название, автор, ISBN, жанр | model/BookTitle.kt |
 | BookCopy | Инвентарный номер, статус, ссылка на BookTitle | model/BookTitle.kt |
 | Reader | Профиль читателя | model/Reader.kt |
 | Loan | Выдача, срок возврата, статус | model/Loan.kt |
@@ -52,7 +52,7 @@ docker-compose up -d
 |---------|------------|
 | Экземпляр в статусе LOANED нельзя выдать повторно | LoanService — проверка статуса BookCopy перед выдачей |
 | Возврат закрывает активную выдачу и обновляет статус экземпляра | LoanService.returnLoan() |
-| Просрочка формирует штраф | OverdueScheduler — запускается каждые 30 минут |
+| Просрочка формирует штраф | OverdueScheduler — запускается каждый день в 00:00 |
 | У одного читателя ограничено число активных выдач | LoanService — проверка maxActiveLoans |
 | Все операции выдачи и возврата трассируемы | LoanHistory — запись при каждой операции |
 
@@ -102,8 +102,8 @@ docker-compose up -d
 | Spring Security + JWT + роли | JwtTokenProvider, JwtAuthenticationFilter, роли LIBRARIAN/READER |
 | Unit + интеграционные тесты Testcontainers | BookServiceTest (MockK), AuthIntegrationTest (Testcontainers) |
 | Dockerfile backend + frontend + docker-compose | Dockerfile, frontend/Dockerfile, docker-compose.yml |
-| Redis + @Cacheable | RedisConfig, @Cacheable в BookService.findAll() |
-| @Async + @Scheduled | NotificationService (@Async), OverdueScheduler (@Scheduled каждые 30 мин) |
+| Redis + @Cacheable | RedisConfig, @Cacheable в BookService.findAll(), сброс кэша при выдаче/возврате |
+| @Async + @Scheduled | NotificationService (@Async), OverdueScheduler (@Scheduled каждый день в 00:00) |
 | GitHub Actions CI/CD | .github/workflows/ci.yml — 4 джоба: test-backend, build-backend, lint-frontend, build-frontend |
 | Spring Actuator | /actuator/health, /actuator/metrics |
 
@@ -123,15 +123,13 @@ src/
 │   ├── security/        # JWT фильтр и провайдер
 │   └── service/         # Бизнес-логика
 └── main/resources/
-    └── db/migration/    # Flyway миграции V1-V3
-
+└── db/migration/    # Flyway миграции V1-V3
 frontend/src/
 ├── api/             # HTTP клиенты
 ├── components/      # StatusBadge
 ├── stores/          # Pinia (auth)
 ├── router/          # Маршруты
 └── views/           # Страницы
-
 Dockerfile               # Backend образ
 docker-compose.yml       # Все сервисы
 .github/workflows/ci.yml # CI/CD pipeline
