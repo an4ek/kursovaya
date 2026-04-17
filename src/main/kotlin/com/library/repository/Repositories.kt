@@ -35,12 +35,14 @@ interface BookTitleRepository : JpaRepository<BookTitle, UUID> {
             SELECT * FROM book_title bt 
             WHERE (:title IS NULL OR bt.title ILIKE CONCAT('%', CAST(:title AS text), '%'))
             AND (:author IS NULL OR bt.author ILIKE CONCAT('%', CAST(:author AS text), '%'))
+            AND (:genre IS NULL OR bt.genre ILIKE CONCAT('%', CAST(:genre AS text), '%'))
         """,
         nativeQuery = true
     )
     fun findWithFilters(
         @Param("title") title: String?,
-        @Param("author") author: String?
+        @Param("author") author: String?,
+        @Param("genre") genre: String?
     ): List<BookTitle>
 
     @Query(

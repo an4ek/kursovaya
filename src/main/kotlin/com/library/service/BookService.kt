@@ -33,7 +33,7 @@ class BookService(
     private val bookCopyRepository: BookCopyRepository
 ) {
 
-    @Cacheable(cacheNames = [RedisConfig.BOOKS_CACHE], key = "'all:' + #title + ':' + #author + ':' + #availableOnly")
+    @Cacheable(cacheNames = [RedisConfig.BOOKS_CACHE], key = "'all:' + #title + ':' + #author + ':' + #genre + ':' + #availableOnly")
     @Transactional(readOnly = true)
     fun findAll(
         title: String? = null,
@@ -44,7 +44,7 @@ class BookService(
         val books = if (availableOnly) {
             bookTitleRepository.findAllAvailable()
         } else {
-            bookTitleRepository.findWithFilters(title, author)
+            bookTitleRepository.findWithFilters(title, author, genre)
         }
 
         return books.map { book ->

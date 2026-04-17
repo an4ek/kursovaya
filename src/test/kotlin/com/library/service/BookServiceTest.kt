@@ -80,7 +80,7 @@ class BookServiceTest {
 //проверяет что если книг нет, метод возвращает пустой список а не null или ошибку.
     @Test
     fun `findAll should return empty list when no books`() {
-        every { bookTitleRepository.findWithFilters(null, null) } returns emptyList()
+        every { bookTitleRepository.findWithFilters(null, null, null) } returns emptyList()
 
         val result = bookService.findAll()
 

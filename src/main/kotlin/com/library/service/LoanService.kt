@@ -10,6 +10,8 @@ import com.library.model.*
 import com.library.repository.*
 import org.springframework.beans.factory.annotation.Value
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -25,9 +27,11 @@ class LoanService(
     private val readerRepository: ReaderRepository,
     private val userAccountRepository: UserAccountRepository,
     private val fineRepository: FineRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val cacheManager: CacheManager
 ) {
 
+    @CacheEvict(cacheNames = ["books"], allEntries = true)
     @Transactional
     fun issue(request: IssueLoanRequest, issuedByLogin: String): LoanResponse {
         val copy = bookCopyRepository.findById(request.bookCopyId)
@@ -82,6 +86,7 @@ class LoanService(
         return LoanResponse.from(loan)
     }
 
+    @CacheEvict(cacheNames = ["books"], allEntries = true)
     @Transactional
     fun returnLoan(loanId: UUID, performedByLogin: String, notes: String? = null): LoanResponse {
         val loan = loanRepository.findById(loanId)

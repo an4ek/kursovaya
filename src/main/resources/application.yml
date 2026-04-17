@@ -53,7 +53,7 @@ app:
     max-active-loans: 5
 
   scheduler:
-    overdue-check-cron: "0 */30 * * * *"  # каждые 30 минут
+    overdue-check-cron: "0 0 0 * * *"  # каждый день в 00:00
 
 server:
   port: 8080
