@@ -1,6 +1,5 @@
-//отвечает за требование ТЗ «@Cacheable + Redis». Управляет каталогом книг. Метод findAll() аннотирован @Cacheable — при первом вызове данные берутся из PostgreSQL и сохраняются в Redis, при повторных вызовах — сразу из Redis без обращения к базе.
+//отвечает за управление штрафами. Создаёт штраф при просрочке и пересчитывает его сумму при каждом запуске планировщика.
 package com.library.service
-
 import com.library.dto.response.FineResponse
 import com.library.exception.BusinessRuleException
 import com.library.exception.EntityNotFoundException
@@ -16,71 +15,61 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
-
 @Service
 class FineService(
     private val fineRepository: FineRepository,
     @Value("\${app.fine.rate-per-day}") private val fineRatePerDay: Double
 ) {
-
     /**
-     * Создать штраф за просрочку — вызывается из OverdueScheduler.
-     * Не создаёт дубликат, если штраф уже существует.
+     * Создать или обновить штраф за просрочку — вызывается из OverdueScheduler.
+     * Если штраф уже существует — пересчитывает сумму по актуальному числу дней.
      */
     @Transactional
     fun createOverdueFine(loan: Loan): Fine? {
-        if (fineRepository.existsByLoanIdAndStatus(loan.id, FineStatus.PENDING)) {
-            return null // штраф уже создан
-        }
-
         val daysOverdue = LocalDate.now().toEpochDay() - loan.dueDate.toEpochDay()
         if (daysOverdue <= 0) return null
-
         val amount = BigDecimal.valueOf(daysOverdue * fineRatePerDay)
-
-        return fineRepository.save(
-            Fine(
-                loan = loan,
-                reason = FineReason.OVERDUE,
-                amount = amount
+        val existing = fineRepository.findByLoanIdAndStatus(loan.id, FineStatus.PENDING)
+        return if (existing != null) {
+            existing.amount = amount
+            fineRepository.save(existing)
+        } else {
+            fineRepository.save(
+                Fine(
+                    loan = loan,
+                    reason = FineReason.OVERDUE,
+                    amount = amount
+                )
             )
-        )
+        }
     }
-
     @Transactional(readOnly = true)
     fun findAll(status: FineStatus? = null): List<FineResponse> {
         val fines = if (status != null) fineRepository.findByStatus(status)
         else fineRepository.findAll()
         return fines.map { FineResponse.from(it) }
     }
-
     @Transactional(readOnly = true)
     fun findByReader(readerId: UUID): List<FineResponse> =
         fineRepository.findByLoanReaderId(readerId).map { FineResponse.from(it) }
-
     @Transactional
     fun pay(fineId: UUID): FineResponse {
         val fine = fineRepository.findById(fineId)
             .orElseThrow { EntityNotFoundException("Fine", fineId) }
-
         if (fine.status != FineStatus.PENDING) {
             throw BusinessRuleException("Fine is already ${fine.status}")
         }
-
         fine.status = FineStatus.PAID
         fine.paidAt = LocalDateTime.now()
         return FineResponse.from(fineRepository.save(fine))
     }
-
     @Transactional
     fun waive(fineId: UUID): FineResponse {
         val fine = fineRepository.findById(fineId)
             .orElseThrow { EntityNotFoundException("Fine", fineId) }
-
         if (fine.status != FineStatus.PENDING) {
             throw BusinessRuleException("Only PENDING fines can be waived")
         }
-
         fine.status = FineStatus.WAIVED
         return FineResponse.from(fineRepository.save(fine))
     }

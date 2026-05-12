@@ -127,6 +127,7 @@ interface FineRepository : JpaRepository<Fine, UUID> {
 
     fun findByStatus(status: FineStatus): List<Fine>
 
+    fun findByLoanIdAndStatus(loanId: UUID, status: FineStatus): Fine?
     fun existsByLoanIdAndStatus(loanId: UUID, status: FineStatus): Boolean
 
     @Query("""
